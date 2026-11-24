@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- 托盘图标需要 WinForms 的 NotifyIcon -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>JieDraw</RootNamespace>
+    <AssemblyName>JieDraw</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>0.1.0</Version>
+    <Product>捷画 JieDraw</Product>
+    <!-- 避免多余语言卫星程序集 -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- R2R 预编译可加速冷启动，但需联网拉 Crossgen2 包；离线环境构建失败时移除此行。
+         本应用常驻托盘、冷启动一次性，默认不开启。<PublishReadyToRun>true</PublishReadyToRun> -->
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <Version>0.3.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 图标：exe 图标用 ApplicationIcon；运行时托盘/窗口经 pack:// 读取需 Resource -->
+    <Resource Include="Assets\icon.ico" />
+    <Resource Include="Assets\icon-256.png" />
+  </ItemGroup>
+
+</Project>

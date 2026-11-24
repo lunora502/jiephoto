@@ -1,0 +1,8 @@
+<Application x:Class="JieDraw.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <!-- 常驻托盘：不随窗口关闭而退出，仅托盘菜单「退出」结束进程 -->
+    <Application.Resources>
+    </Application.Resources>
+</Application>

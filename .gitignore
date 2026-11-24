@@ -1,0 +1,8 @@
+bin/
+obj/
+test-out/
+dist/
+*.user
+.vs/
+draft.isf
+

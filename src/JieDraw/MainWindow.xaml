@@ -1,0 +1,272 @@
+<Window x:Class="JieDraw.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="JieDraw"
+        Width="760" Height="560"
+        MinWidth="660" MinHeight="360"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        ShowActivated="False"
+        ShowInTaskbar="False"
+        Background="#FFFFFF">
+
+    <!-- 无边框但仍可缩放：四周 8px 热区 -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            ResizeBorderThickness="8"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- 单选芯片（颜色/粗细/模式） -->
+        <ControlTemplate x:Key="ChipTpl" TargetType="RadioButton">
+            <Border x:Name="bd"
+                    Background="Transparent"
+                    CornerRadius="6"
+                    Padding="7,4">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="#3A3D42" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="#4A4E55" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="Chip" TargetType="RadioButton">
+            <Setter Property="Template" Value="{StaticResource ChipTpl}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- 普通按钮（撤销/重做/清空/复制/保存/收起） -->
+        <ControlTemplate x:Key="BtnTpl" TargetType="Button">
+            <Border x:Name="bd"
+                    Background="Transparent"
+                    CornerRadius="6"
+                    Padding="9,5">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="#3A3D42" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="#4A4E55" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="Template" Value="{StaticResource BtnTpl}" />
+            <Setter Property="Foreground" Value="#E8EAED" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- 置顶等开关型按钮：选中态用蓝色高亮 -->
+        <ControlTemplate x:Key="TglTpl" TargetType="ToggleButton">
+            <Border x:Name="bd" Background="Transparent" CornerRadius="6" Padding="9,5">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="#3A3D42" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="bd" Property="Background" Value="#1E6FD9" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="WinToggle" TargetType="ToggleButton">
+            <Setter Property="Template" Value="{StaticResource TglTpl}" />
+            <Setter Property="Foreground" Value="#E8EAED" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <Style x:Key="Txt" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#E8EAED" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="#26282C" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- 顶部工具栏（两行，按功能分区）：
+                 上行 = 窗口级操作：标题+状态 | 撤销/重做/清空 | ⚙ — □ ✕（Dock 右侧恒可见）
+                 下行 = 绘图工具：颜色 | 粗细 | 六种模式 | 复制/粘贴/保存（WrapPanel 兜底换行） -->
+            <Border Grid.Row="0"
+                    Background="#202124"
+                    BorderBrush="#2F3136"
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="ToolBar_MouseLeftButtonDown">
+                <StackPanel>
+                    <DockPanel Margin="10,5,8,4">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <!-- 编辑历史 -->
+                            <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE7A7;" Click="Undo_Click" ToolTip="撤销 (Ctrl+Z)"
+                                    AutomationProperties.AutomationId="btnUndo" />
+                            <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE7A6;" Click="Redo_Click" Margin="2,0,0,0" ToolTip="重做 (Ctrl+Y)"
+                                    AutomationProperties.AutomationId="btnRedo" />
+                            <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE74D;" Click="Clear_Click" Margin="2,0,0,0" ToolTip="清空画布"
+                                    AutomationProperties.AutomationId="btnClear" />
+
+                            <Border Width="1" Height="22" Background="#3C4043" Margin="7,0" />
+
+                            <!-- 屏幕批注 / 截图 / 置顶 / 设置 / 窗口控制 -->
+                            <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE70F;" Click="Annotate_Click"
+                                    AutomationProperties.AutomationId="btnAnnotate"
+                                    ToolTip="屏幕批注：在整屏幕上直接画（穿透可操作下层应用，Esc 退出）" />
+                            <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE722;" Click="Screenshot_Click"
+                                    AutomationProperties.AutomationId="btnScreenshot"
+                                    ToolTip="屏幕截图到画布（拖出区域，截完自动放进画布标注）" />
+                            <ToggleButton x:Name="btnPin" Style="{StaticResource WinToggle}"
+                                          FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="2,0,0,0"
+                                          Content="&#xE718;"
+                                          AutomationProperties.AutomationId="btnPin"
+                                          ToolTip="画板置顶开关" />
+                            <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE713;" Click="Settings_Click" Margin="2,0,0,0"
+                                    AutomationProperties.AutomationId="btnSettings"
+                                    ToolTip="设置（自定义热键 / 开机自启）" />
+                            <Button x:Name="btnHide" Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE921;" Click="Hide_Click" Margin="2,0,0,0" ToolTip="收起（Esc），内容保留"
+                                    AutomationProperties.AutomationId="btnHide" />
+                            <Button x:Name="btnMaximize" Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE922;" Click="Maximize_Click" Margin="2,0,0,0"
+                                    ToolTip="最大化/还原（F11，或双击工具栏空白处）"
+                                    AutomationProperties.AutomationId="btnMaximize" />
+                            <Button x:Name="btnClose" Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                    Content="&#xE8BB;" Click="Close_Click" Margin="2,0,0,0" ToolTip="退出捷画"
+                                    AutomationProperties.AutomationId="btnClose" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="捷画" FontSize="14" FontWeight="Bold" Foreground="#E8EAED"
+                                       VerticalAlignment="Center" Margin="2,0,8,0" />
+                            <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="statusText"
+                                       Style="{StaticResource Txt}" Foreground="#8AB4F8"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <WrapPanel Margin="10,0,10,6">
+                        <!-- 颜色 -->
+                        <RadioButton x:Name="cBlack" Style="{StaticResource Chip}" Tag="#1A1A1A"
+                                     Click="Color_Click" ToolTip="墨黑">
+                            <Ellipse Width="14" Height="14" Fill="#1A1A1A" Stroke="#5F6368" StrokeThickness="1" />
+                        </RadioButton>
+                        <RadioButton x:Name="cRed" Style="{StaticResource Chip}" Tag="#E5484D"
+                                     Click="Color_Click" ToolTip="朱红">
+                            <Ellipse Width="14" Height="14" Fill="#E5484D" />
+                        </RadioButton>
+                        <RadioButton x:Name="cBlue" Style="{StaticResource Chip}" Tag="#3B82F6"
+                                     Click="Color_Click" ToolTip="蓝">
+                            <Ellipse Width="14" Height="14" Fill="#3B82F6" />
+                        </RadioButton>
+                        <RadioButton x:Name="cGreen" Style="{StaticResource Chip}" Tag="#2E9E5B"
+                                     Click="Color_Click" ToolTip="绿">
+                            <Ellipse Width="14" Height="14" Fill="#2E9E5B" />
+                        </RadioButton>
+                        <RadioButton x:Name="cOrange" Style="{StaticResource Chip}" Tag="#F59E0B"
+                                     Click="Color_Click" ToolTip="橙">
+                            <Ellipse Width="14" Height="14" Fill="#F59E0B" />
+                        </RadioButton>
+
+                        <Border Width="1" Height="22" Background="#3C4043" Margin="7,0" />
+
+                        <!-- 粗细 -->
+                        <RadioButton x:Name="s1" Style="{StaticResource Chip}" Tag="2"
+                                     Click="Size_Click" ToolTip="细">
+                            <Ellipse Width="5" Height="5" Fill="#E8EAED" />
+                        </RadioButton>
+                        <RadioButton x:Name="s2" Style="{StaticResource Chip}" Tag="4"
+                                     Click="Size_Click" ToolTip="中">
+                            <Ellipse Width="8" Height="8" Fill="#E8EAED" />
+                        </RadioButton>
+                        <RadioButton x:Name="s3" Style="{StaticResource Chip}" Tag="8"
+                                     Click="Size_Click" ToolTip="粗">
+                            <Ellipse Width="12" Height="12" Fill="#E8EAED" />
+                        </RadioButton>
+
+                        <Border Width="1" Height="22" Background="#3C4043" Margin="7,0" />
+
+                        <!-- 模式：绘制三种 + 选择三种 -->
+                        <RadioButton x:Name="mPen" Style="{StaticResource Chip}" Tag="ink" GroupName="mode"
+                                     Click="Mode_Click" Margin="0,0,2,0" AutomationProperties.AutomationId="mPen"
+                                     ToolTip="笔 (Ctrl+1)">
+                            <TextBlock Text="笔" Style="{StaticResource Txt}" />
+                        </RadioButton>
+                        <RadioButton x:Name="mMarker" Style="{StaticResource Chip}" Tag="marker" GroupName="mode"
+                                     Click="Mode_Click" Margin="0,0,2,0" AutomationProperties.AutomationId="mMarker"
+                                     ToolTip="荧光笔 (Ctrl+2)">
+                            <TextBlock Text="荧光笔" Style="{StaticResource Txt}" />
+                        </RadioButton>
+                        <RadioButton x:Name="mErase" Style="{StaticResource Chip}" Tag="erase" GroupName="mode"
+                                     Click="Mode_Click" Margin="0,0,2,0" AutomationProperties.AutomationId="mErase"
+                                     ToolTip="橡皮 (Ctrl+3)">
+                            <TextBlock Text="橡皮" Style="{StaticResource Txt}" />
+                        </RadioButton>
+                        <RadioButton x:Name="mRect" Style="{StaticResource Chip}" Tag="rect" GroupName="mode"
+                                     Click="Mode_Click" Margin="0,0,2,0" AutomationProperties.AutomationId="mRect"
+                                     ToolTip="框选 (Ctrl+4)：拖出矩形框选笔迹，选中后可拖动">
+                            <TextBlock Text="框选" Style="{StaticResource Txt}" />
+                        </RadioButton>
+                        <RadioButton x:Name="mClick" Style="{StaticResource Chip}" Tag="click" GroupName="mode"
+                                     Click="Mode_Click" Margin="0,0,2,0" AutomationProperties.AutomationId="mClick"
+                                     ToolTip="点选 (Ctrl+5)：逐个点击笔迹，Ctrl+点击加选/减选">
+                            <TextBlock Text="点选" Style="{StaticResource Txt}" />
+                        </RadioButton>
+                        <RadioButton x:Name="mLasso" Style="{StaticResource Chip}" Tag="lasso" GroupName="mode"
+                                     Click="Mode_Click" AutomationProperties.AutomationId="mLasso"
+                                     ToolTip="套索 (Ctrl+6)：画圈圈选笔迹，选中后可拖动">
+                            <TextBlock Text="套索" Style="{StaticResource Txt}" />
+                        </RadioButton>
+
+                        <Border Width="1" Height="22" Background="#3C4043" Margin="7,0" />
+
+                        <!-- 复制/粘贴/导出 -->
+                        <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                Content="&#xE8C8;" Click="Copy_Click" ToolTip="复制：有选中=选中笔迹，无选中=整画布 PNG (Ctrl+C)"
+                                AutomationProperties.AutomationId="btnCopy" />
+                        <Button Style="{StaticResource Btn}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                Content="&#xE77F;" Click="Paste_Click" Margin="2,0,0,0" ToolTip="粘贴笔迹 (Ctrl+V)"
+                                AutomationProperties.AutomationId="btnPaste" />
+                        <Button Style="{StaticResource Btn}" Content="保存 PNG" Click="Save_Click" Margin="6,0,0,0"
+                                ToolTip="保存到 图片\JieDraw (Ctrl+S)"
+                                AutomationProperties.AutomationId="btnSave" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- 画布 + 框选橡皮筋（覆盖层，不参与命中测试） -->
+            <InkCanvas x:Name="Ink" Grid.Row="1" Background="#FFFFFF"
+                       AutomationProperties.AutomationId="inkCanvas" />
+            <Rectangle x:Name="MarqueeRect" Grid.Row="1"
+                       Stroke="#1A73E8" StrokeThickness="1" StrokeDashArray="2,2"
+                       Fill="#261A73E8"
+                       HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Visibility="Collapsed" IsHitTestVisible="False" />
+        </Grid>
+    </Border>
+</Window>
